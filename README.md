@@ -38,7 +38,6 @@ ggplot2
 dplyr
 lubridate
 bslib
-shinyWidgets
 readr
 bsicons
 shinymanager
