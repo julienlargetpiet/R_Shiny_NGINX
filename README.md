@@ -27,7 +27,6 @@ a pie chart of the most visited pages, and a time-series graph of traffic by URL
 ├── global.R
 ├── ui.R
 ├── server.R
-└── (optional) www/       # static assets like icons or logos
 </pre>
 
 <h2>Dependencies</h2>
