@@ -91,76 +91,142 @@ function (input, output, session) {
 
   })
 
-  
-  output$graph <- renderPlot({
-
-      if (!is.null(input$webpages) && nzchar(input$webpages)) {
-
-        patterns <- strsplit(input$webpages, "--")[[1]]
-        
-        df <- filtered_data()
-
-        df <- df[Reduce(`|`, lapply(patterns, function(p) 
-                                                 grepl(p, df$target))), ]
-        
-        df$target_group <- df$target
-        for (ptrn in patterns) {
-          df$target_group <- ifelse(grepl(ptrn, df$target_group),
-                                    ptrn,
-                                    df$target_group)
-        }
-      } else {
-        df$target_group = df$target
+  output$graph <- renderPlotly({
+    df <- filtered_data()
+    if (!is.null(input$webpages) && nzchar(input$webpages)) {
+      patterns <- strsplit(input$webpages, "--")[[1]]
+      df <- df[Reduce(`|`, lapply(patterns, function(p) grepl(p, df$target))), ]
+      df$target_group <- df$target
+      for (ptrn in patterns) {
+        df$target_group <- ifelse(grepl(ptrn, df$target_group), ptrn, df$target_group)
       }
+    } else {
+      df$target_group <- df$target
+    }
 
-      req(nrow(df) > 0)
+    req(nrow(df) > 0)
 
-      interval <- interval_map[[time_unit()]]
-      df$date <- floor_date(df$date, unit = interval)
+    interval <- interval_map[[time_unit()]]
+    df$date <- floor_date(df$date, unit = interval)
+    df <- df %>%
+      group_by(target_group, date) %>%
+      summarise(hits = n(), .groups = "drop")
 
-      df <- df %>%
-        group_by(target_group, date) %>%
-        summarise(hits = n(), .groups = "drop")
+    plot_ly(
+      data = df,
+      x = ~date,
+      y = ~hits,
+      color = ~target_group,
+      type = "scatter",
+      mode = "lines+markers"
+    ) %>%
+      layout(
+        title = "Traffic by URL",
+        xaxis = list(title = "Date"),
+        yaxis = list(title = "Number of requests"),
+        legend = list(orientation = "h", x = 0.4, y = -0.2)
+      )
+  })
+  
+  #output$graph <- renderPlotly({ # ggplot2 -> plotly
+
+  #    if (!is.null(input$webpages) && nzchar(input$webpages)) {
+
+  #      patterns <- strsplit(input$webpages, "--")[[1]]
+  #      
+  #      df <- filtered_data()
+
+  #      df <- df[Reduce(`|`, lapply(patterns, function(p) 
+  #                                               grepl(p, df$target))), ]
+  #      
+  #      df$target_group <- df$target
+  #      for (ptrn in patterns) {
+  #        df$target_group <- ifelse(grepl(ptrn, df$target_group),
+  #                                  ptrn,
+  #                                  df$target_group)
+  #      }
+  #    } else {
+  #      df$target_group = df$target
+  #    }
+
+  #    req(nrow(df) > 0)
+
+  #    interval <- interval_map[[time_unit()]]
+  #    df$date <- floor_date(df$date, unit = interval)
+
+  #    df <- df %>%
+  #      group_by(target_group, date) %>%
+  #      summarise(hits = n(), .groups = "drop")
  
-      ggplot(df, aes(x = date, y = hits, color = target_group)) +
-        geom_line() +
-        geom_point() +
-        labs(x = "Date",
-             y = "Number of requests",
-             title = "Traffic by URL") +
-        theme_minimal() 
+  #    p <- ggplot(df, aes(x = date, y = hits, color = target_group)) +
+  #      geom_line() +
+  #      geom_point() +
+  #      labs(x = "Date",
+  #           y = "Number of requests",
+  #           title = "Traffic by URL") +
+  #      theme_minimal() 
 
-    })
+  #    ggplotly(p)
 
-  output$pie_chart <- renderPlot({
+  #  })
 
-     df <- filtered_data()
-
-     req(nrow(df) > 0)
-
+    output$pie_chart <- renderPlotly({
+      df <- filtered_data()
+      req(nrow(df) > 0)
+    
       agg <- df %>%
-          group_by(target) %>%
-          summarise(hits = n(), .groups = "drop") %>%
-          arrange(desc(hits)) %>%
-          head(5)
-      
+        group_by(target) %>%
+        summarise(hits = n(), .groups = "drop") %>%
+        arrange(desc(hits)) %>%
+        head(5)
+    
       total_hits <- sum(agg$hits)
-      
-      ggplot(agg, aes(x = "", y = hits, fill = target)) +
-        geom_bar(stat = "identity", width = 1) +
-        coord_polar(theta = "y") +
-        theme_void() +
-        labs(
-          title = paste("Most visited targets, a total of", 
-                        total_hits, 
-                        "total hits!"),
-          fill = "Target Group"
-        ) +
-        geom_text(
-          aes(label = paste0(round(100 * hits / sum(hits), 1), "%")),
-          position = position_stack(vjust = 0.5)
+    
+      plot_ly(
+        data = agg,
+        labels = ~target,
+        values = ~hits,
+        type = 'pie',
+        textinfo = 'label+percent',
+        insidetextorientation = 'radial'
+      ) %>%
+        layout(
+          title = paste("Most visited targets —", total_hits, "total hits!"),
+          showlegend = TRUE
         )
     })
+
+  #output$pie_chart <- renderPlotly({ #ggplot2 -> plotly
+
+  #   df <- filtered_data()
+
+  #   req(nrow(df) > 0)
+
+  #    agg <- df %>%
+  #        group_by(target) %>%
+  #        summarise(hits = n(), .groups = "drop") %>%
+  #        arrange(desc(hits)) %>%
+  #        head(5)
+  #    
+  #    total_hits <- sum(agg$hits)
+  #    
+  #    p <- ggplot(agg, aes(x = "", y = hits, fill = target)) +
+  #      geom_bar(stat = "identity", width = 1) +
+  #      coord_polar(theta = "y") +
+  #      theme_void() +
+  #      labs(
+  #        title = paste("Most visited targets, a total of", 
+  #                      total_hits, 
+  #                      "total hits!"),
+  #        fill = "Target Group"
+  #      ) +
+  #      geom_text(
+  #        aes(label = paste0(round(100 * hits / sum(hits), 1), "%")),
+  #        position = position_stack(vjust = 0.5)
+  #      )
+
+  #      ggplotly(p)
+  #  })
 
 }
 

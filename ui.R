@@ -48,10 +48,9 @@ ui <- fluidPage(
                   ),
       value_box(
           title = NULL,
-          value = withSpinner(plotOutput(outputId = "pie_chart"), 
+          value = withSpinner(plotlyOutput(outputId = "pie_chart"), 
                               type = 5, 
-                              size = 1.5),
-          showcase = bsicons::bs_icon("pie-chart")
+                              size = 1.5)
         )
       )
     ),
@@ -89,10 +88,9 @@ ui <- fluidPage(
                 ),
         value_box(
           title = NULL,
-          value = withSpinner(plotOutput(outputId = "graph"), 
+          value = withSpinner(plotlyOutput(outputId = "graph"), 
                               type = 5, 
-                              size = 1.5),
-          showcase = bsicons::bs_icon("graph-up-arrow")
+                              size = 1.5)
         )
       )
     )

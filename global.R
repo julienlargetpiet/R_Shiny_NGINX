@@ -1,10 +1,10 @@
 library("shiny")
-library("ggplot2")
+#library("ggplot2") import if you want to lot exclusively with ggpot2, modify server.R and ui.R so 
+library("plotly")
 library("dplyr")
 library("lubridate")
 library("bslib")
 library("readr")
-library("bsicons") # liste icons : https://icons.getbootstrap.com/
 library("shinymanager")
 library("shinycssloaders")
 
