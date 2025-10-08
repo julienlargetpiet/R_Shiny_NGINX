@@ -4,17 +4,17 @@ function (input, output, session) {
     check_credentials = check_credentials(credentials)
   )
 
-  filter_ip <- reactiveVal("")
+  #filter_ip <- reactiveVal("")
 
-  observeEvent(input$filter_ip1, ignoreInit = TRUE, {
-    updateTextInput(session, "filter_ip2", value = input$filter_ip1)
-    filter_ip(input$filter_ip1)
-  })
+  #observeEvent(input$filter_ip1, ignoreInit = TRUE, {
+  #  updateTextInput(session, "filter_ip2", value = input$filter_ip1)
+  #  filter_ip(input$filter_ip1)
+  #})
 
-  observeEvent(input$filter_ip2, ignoreInit = TRUE, {
-    updateTextInput(session, "filter_ip1", value = input$filter_ip2)
-    filter_ip(input$filter_ip2)
-  })
+  #observeEvent(input$filter_ip2, ignoreInit = TRUE, {
+  #  updateTextInput(session, "filter_ip1", value = input$filter_ip2)
+  #  filter_ip(input$filter_ip2)
+  #})
 
   last_n <- reactiveVal(15)      
 
@@ -63,7 +63,7 @@ function (input, output, session) {
       )
     )
 
-    excluded_ips <- strsplit(filter_ip(), "--")[[1]]
+    #excluded_ips <- strsplit(filter_ip(), "--")[[1]]
 
     df <- df %>%
       filter(!grepl(bot_pat, .[[10]]))
@@ -73,7 +73,7 @@ function (input, output, session) {
                   "date",
                   "target")
 
-    df <- df[!df$ip %in% excluded_ips, ]
+    #df <- df[!df$ip %in% excluded_ips, ]
     df$date <- as.POSIXct(substring(df$date, 2), format="%d/%b/%Y:%H:%M:%S") 
 
     start <- as.POSIXct("01/Sep/1970:00", format="%d/%b/%Y:%H")

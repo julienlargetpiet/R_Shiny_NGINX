@@ -25,12 +25,12 @@ ui <- fluidPage(
                           label = "Or upload your CSV file",
                           accept = c()           
                         ),
-                        textInput(
-                             inputId = "filter_ip1",
-                             label = "Ip to exclude (XXX.XXX.XXX.XXX--XXX.XXX.XXX.XXX...)",
-                             value = "",
-                             placeholder = "Enter ips"
-                           ),
+                        #textInput(
+                        #     inputId = "filter_ip1",
+                        #     label = "Ip to exclude (XXX.XXX.XXX.XXX--XXX.XXX.XXX.XXX...)",
+                        #     value = "",
+                        #     placeholder = "Enter ips"
+                        #   ),
                         selectInput(
                             inputId = "time_unit1",
                             label = "Time Unit :",
@@ -65,12 +65,12 @@ ui <- fluidPage(
                             value = "^/$",
                             placeholder = "Enter a regex like ^France$"
                           ),
-                          textInput(
-                             inputId = "filter_ip2",
-                             label = "Ip to exclude (XXX.XXX.XXX.XXX--XXX.XXX.XXX.XXX...)",
-                             value = "",
-                             placeholder = "Enter ips"
-                           ),
+                          #textInput(
+                          #   inputId = "filter_ip2",
+                          #   label = "Ip to exclude (XXX.XXX.XXX.XXX--XXX.XXX.XXX.XXX...)",
+                          #   value = "",
+                          #   placeholder = "Enter ips"
+                          # ),
                           selectInput(
                               inputId = "time_unit2",
                               label = "Time Unit :",
