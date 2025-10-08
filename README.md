@@ -1,5 +1,7 @@
 <h1>R Shiny NGINX Log Analyzer</h1>
 
+<img src = "out.jpg" />
+
 <h2>Overview</h2>
 <p>
 This Shiny application provides an interactive interface for analyzing and visualizing web server access logs (e.g., NGINX logs).
