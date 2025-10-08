@@ -27,7 +27,7 @@ ui <- fluidPage(
                         ),
                         textInput(
                              inputId = "filter_ip1",
-                             label = "Ip to filter (XXX.XXX.XXX.XXX--XXX.XXX.XXX.XXX...)",
+                             label = "Ip to exclude (XXX.XXX.XXX.XXX--XXX.XXX.XXX.XXX...)",
                              value = "",
                              placeholder = "Enter ips"
                            ),
@@ -68,7 +68,7 @@ ui <- fluidPage(
                           ),
                           textInput(
                              inputId = "filter_ip2",
-                             label = "Ip to filter (XXX.XXX.XXX.XXX--XXX.XXX.XXX.XXX...)",
+                             label = "Ip to exclude (XXX.XXX.XXX.XXX--XXX.XXX.XXX.XXX...)",
                              value = "",
                              placeholder = "Enter ips"
                            ),
