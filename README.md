@@ -12,6 +12,7 @@ a pie chart of the most visited pages, and a time-series graph of traffic by URL
   <li>User authentication using <code>shinymanager</code>.</li>
   <li>Log input from either a file upload or a server path.</li>
   <li>Automatic bot filtering based on known user-agent patterns.</li>
+  <li>Manually exclude ips</li>
   <li>Adjustable time window using numeric and time-unit inputs.</li>
   <li>Two synchronized tabs:
     <ul>
