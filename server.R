@@ -65,8 +65,6 @@ function (input, output, session) {
 
     excluded_ips <- strsplit(filter_ip(), "--")[[1]]
 
-    cat(excluded_ips)
-
     df <- df %>%
       filter(!grepl(bot_pat, .[[10]]))
 
