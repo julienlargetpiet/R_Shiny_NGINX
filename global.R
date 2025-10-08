@@ -7,6 +7,7 @@ library("bslib")
 library("readr")
 library("shinymanager")
 library("shinycssloaders")
+library("DT")
 
 credentials <- data.frame(
   user = c("admin"),

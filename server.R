@@ -196,6 +196,8 @@ function (input, output, session) {
         )
     })
 
+  output$mytable <- renderDataTable({filtered_data()})
+
   #output$pie_chart <- renderPlotly({ #ggplot2 -> plotly
 
   #   df <- filtered_data()

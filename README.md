@@ -44,6 +44,7 @@ readr
 bsicons
 shinymanager
 shinycssloaders
+DT
 </pre>
 
 <h2>Authentication</h2>

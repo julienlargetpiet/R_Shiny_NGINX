@@ -93,7 +93,8 @@ ui <- fluidPage(
                               size = 1.5)
         )
       )
-    )
+    ),
+    nav_panel("Data Page", dataTableOutput("mytable"))
   )
 )
 
