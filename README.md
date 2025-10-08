@@ -19,7 +19,7 @@ a pie chart of the most visited pages, and a time-series graph of traffic by URL
   <li>Two synchronized tabs:
     <ul>
       <li><strong>Most Visited Pages:</strong> Pie chart of top targets.</li>
-      <li><strong>WebPages:</strong> Time-series of specific pages (via regex).</li>
+      <li><strong>WebPages:</strong> Time-series of specific pages (via regex, or context is '--' between regex expression).</li>
     </ul>
   </li>
   <li>Reactive synchronization between equivalent inputs across tabs.</li>
