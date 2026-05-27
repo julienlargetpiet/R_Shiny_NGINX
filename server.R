@@ -184,17 +184,6 @@ function(input, output, session) {
     log_step("ASN Enrichment", t, df)
     t <- Sys.time()
 
-    #df <- df %>%
-    #  group_by(ip) %>%
-    #  mutate(total_requests = n()) %>%
-    #  ungroup() %>%
-    #  mutate(
-    #    is_cloud_asn = grepl(cloud_asn_regex, asn_org, ignore.case = TRUE),
-    #    is_residential = grepl(residential_regex, asn_org, ignore.case = TRUE)
-    #  ) %>%
-    #  filter(!(is_cloud_asn & total_requests > 3)) %>%
-    #  select(-is_cloud_asn, -is_residential)
-
     # cloud ASN repeated range burst
 
     df <- df %>%
@@ -239,13 +228,17 @@ function(input, output, session) {
 
   geo_cache_reactive <- reactiveVal(NULL)
   last_ips <- reactiveVal(character())
+ 
+  geo_enriched_data <- reactive({
   
-  observeEvent(filtered_data(), {
-
-    ips <- sort(unique(filtered_data()$ip))
+    t <- Sys.time()
+  
+    df <- filtered_data()
+    req(nrow(df) > 0)
+  
+    ips <- sort(unique(df$ip))
   
     if (!identical(ips, last_ips())) {
-  
       geo_data <- lookup_ips(
         ips,
         db_path = geo_db_path
@@ -254,30 +247,22 @@ function(input, output, session) {
       geo_cache_reactive(geo_data)
       last_ips(ips)
     }
- 
-  }, ignoreInit = FALSE)
-
-  geo_enriched_data <- reactive({
- 
-    t <- Sys.time()
-
-    df  <- filtered_data()
+  
     geo <- geo_cache_reactive()
   
     if (!is.null(geo)) {
       df <- df %>% left_join(geo, by = "ip")
     }
- 
+  
     log_step("GEO Enrichment", t, df)
-
+  
     df
-
   })
 
   # KPIs
   output$kpi_hits <- renderText({
     df <- filtered_data()
-    format(nrow(df), big.mark = " ")
+    format(nrow(df), big.mark = " ") # big.mark -> spaces as thousands -> each 3 characters
   })
 
   output$kpi_ips <- renderText({
@@ -341,7 +326,7 @@ function(input, output, session) {
       filter(
         !is.na(time_on_page),
         time_on_page > 0,
-        time_on_page < 1500   # safety cap (1 hour max)
+        time_on_page < 3600   # safety cap (1 hour max)
       ) %>%
       summarise(med = median(time_on_page)) %>%
       pull(med)
@@ -364,9 +349,15 @@ function(input, output, session) {
     df <- filtered_data()
     req(nrow(df) > 0)
 
+    #agg <- df %>%
+    #  count(target, name = "hits") %>%
+    #  arrange(desc(hits))
+
+    # OR
     agg <- df %>%
-      count(target, name = "hits") %>%
-      arrange(desc(hits))
+        group_by(target) %>%
+        summarize(hits=n(), .groups="drop") %>%
+        arrange(desc(hits))
 
     topn <- 5
     top <- head(agg, topn)
@@ -378,8 +369,6 @@ function(input, output, session) {
                               hits = other_hits))
     }
 
-    dark <- isTRUE(input$dark_mode)
-
     plot_ly(
       data = top,
       labels = ~target,
@@ -389,7 +378,7 @@ function(input, output, session) {
       insidetextorientation = "radial"
     ) %>%
       layout(
-        template = if (dark) "plotly_dark" else "plotly_white",
+        template = "plotly_white",
         title = list(
           text = "Most visited targets (Top 5 + Other)"
         ),
@@ -400,8 +389,6 @@ function(input, output, session) {
   })
 
   output$graph <- renderPlotly({
-
-    input$dark_mode
 
     df <- filtered_data()
     req(nrow(df) > 0)
@@ -436,10 +423,9 @@ function(input, output, session) {
       mutate(date_bucket = floor_date(date, unit = interval)) %>%
       count(target_group, date_bucket, name = "hits")
 
-    dark <- isTRUE(input$dark_mode)
    
-    text_col <- if (dark) "#F5F5F5" else "#000000"
-    grid_col <- if (dark) "#333333" else "#E5E5E5"
+    text_col <- "#000000"
+    grid_col <- "#E5E5E5"
 
     plot_ly(
       data = df,
@@ -557,13 +543,8 @@ function(input, output, session) {
         .groups = "drop"
       )
   
-    dark <- isTRUE(input$dark_mode)
-  
     leaflet(agg) %>%
       addProviderTiles(
-        if (dark)
-          providers$CartoDB.DarkMatter
-        else
           providers$CartoDB.Positron
       ) %>%
       setView(lng = 0, lat = 20, zoom = 2) %>%
