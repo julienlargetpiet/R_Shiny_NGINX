@@ -66,27 +66,8 @@ ui <- secure_app(ui)
 res_auth <- secure_server(check_credentials = check_credentials(credentials))
 </pre>
 
-<h2>Input Synchronization</h2>
-<p>
-Each tab has its own <code>numericInput</code> (<code>last_n1</code>, <code>last_n2</code>)
-and <code>selectInput</code> (<code>time_unit1</code>, <code>time_unit2</code>), which are kept synchronized using observers:
-</p>
-
-<pre>
-observeEvent(input$last_n1, ignoreInit = TRUE, {
-  updateNumericInput(session, "last_n2", value = input$last_n1)
-  last_n(input$last_n1)
-})
-</pre>
-
-<p>
-This ensures consistent values between tabs without redundant reactivity loops.
-</p>
 
 <h2>Data Processing Logic</h2>
-<p>
-When a log file is uploaded or a server path is provided, the app:
-</p>
 <ol>
   <li>Reads the log file using <code>read_delim()</code> with specified column types.</li>
   <li>Filters out bot requests using a regular expression pattern (<code>bot_pat</code>).</li>
@@ -95,45 +76,6 @@ When a log file is uploaded or a server path is provided, the app:
   <li>Normalizes the <code>target</code> field by extracting URLs between spaces.</li>
 </ol>
 
-<h2>Reactive Expressions</h2>
-<p><strong>filtered_data</strong> — core reactive used by both visualizations:</p>
-<pre>
-filtered_data <- reactive({
-  if (!is.null(input$uploaded_file) && nrow(input$uploaded_file) > 0) {
-    file_path <- input$uploaded_file$datapath
-  } else if (!is.null(input$serverlogpath) && nzchar(input$serverlogpath)) {
-    file_path <- input$serverlogpath
-  } else {
-    req(FALSE, "No file available yet.")
-  }
-  ...
-})
-</pre>
-
-<h2>Visualizations</h2>
-<ul>
-  <li><strong>Pie Chart</strong>: Displays the top 5 most visited pages with percentage labels.</li>
-  <li><strong>Time-Series Plot</strong>: Groups data by time unit (hour, day, week, etc.) and target group.</li>
-</ul>
-
-<h2>Key Variables</h2>
-<pre>
-mult_map <- c(
-  h = 3600,
-  d = 24 * 3600,
-  w = 7 * 24 * 3600,
-  m = 30 * 24 * 3600,
-  y = 365 * 24 * 3600
-)
-
-interval_map <- c(
-  h = "hour",
-  d = "day",
-  w = "week",
-  m = "month",
-  y = "year"
-)
-</pre>
 
 <h2>Running the App</h2>
 <ol>
@@ -152,15 +94,170 @@ interval_map <- c(
   </li>
 </ol>
 
-<h2>Notes</h2>
+<h2>Bot filtering</h2>
+
+<p>Statix has strong bot filtering heuristics such: </p>
+
 <ul>
-  <li>The app automatically filters known bots using the <code>bot_keywords</code> list in <code>global.R</code>.</li>
-  <li>Uploaded files are processed reactively and replaced when a new file is uploaded.</li>
-  <li>The default time range is defined by <code>last_n()</code> × <code>mult_map[time_unit()]</code>.</li>
+
+<li>User Agent filtering</li>
+
 </ul>
 
-<h2>Author</h2>
-<p>
-Developed by <strong>Julien Larget-Piet</strong>.<br>
-All code and logic written in R Shiny.
-</p>
+<code>
+<pre>
+
+ua_is_bot <- setNames(
+  grepl(
+    bot_regex,
+    ua_unique,
+    ignore.case = TRUE,
+    perl = TRUE
+  ),
+  ua_unique
+)
+
+df <- df %>%
+  filter(!ua_is_bot[ua])
+
+</pre>
+</code>
+
+
+<ul>
+<li>Asset heuristic</li>
+</ul>
+
+<code>
+<pre>
+
+css_clients <- df %>% 
+        filter(endsWith(tolower(target), ".css")) %>%
+        distinct(ip) %>%
+        pull(ip)
+
+df <- df %>% filter(ip %in% css_clients)
+
+</pre>
+</code>
+
+<ul>
+<li>Rate heuristic</li>
+</ul>
+
+<code>
+<pre>
+
+df <- df %>%
+  filter(grepl("^/articles/.*\\.html$", target, ignore.case=TRUE))
+
+df <- df %>%
+  group_by(ip, sec = floor_date(date, "second")) %>%
+  mutate(req_per_sec = n()) %>%
+  filter(req_per_sec < 10) %>%
+  ungroup() %>%
+  select(-req_per_sec)
+
+</pre>
+</code>
+
+<ul>
+<li>Reading time heuristic</li>
+</ul>
+
+<code>
+<pre>
+
+df <- df %>%
+  arrange(ip, date) %>%
+  group_by(ip) %>%
+  mutate(
+    next_date = lead(date),
+    time_on_page = as.numeric(difftime(next_date, date, units = "secs")),
+    time_on_page = coalesce(time_on_page, -1)
+  ) %>%
+  ungroup() %>%
+  filter(time_on_page == -1 | time_on_page > 5 & time_on_page < 3600) %>%
+  select(-next_date)
+
+</pre>
+</code>
+
+<ul>
+<li>Cloud ASN repeated range burst</li>
+</ul>
+
+<code>
+<pre>
+
+df <- df %>%
+  arrange(date) %>%
+  mutate(
+    is_cloud_asn = grepl(cloud_asn_regex, asn_org, ignore.case = TRUE),
+    asn_org_clean = coalesce(asn_org, "UNKNOWN_ASN"),
+    ip_16 = sub("\\.[0-9]+\\.[0-9]+$", "", ip),
+    asn_changed = asn_org_clean != lag(asn_org_clean, default = first(asn_org_clean)),
+    asn_bucket = cumsum(asn_changed) + 1
+  ) %>%
+  group_by(asn_bucket, ip_16) %>%
+  mutate(ip_16_occ = n()) %>%
+  ungroup() %>%
+  filter(ip_16_occ == 1 | !is_cloud_asn) %>%
+  select(-asn_org_clean, 
+         -ip_16, -asn_changed, 
+         -asn_bucket, 
+         -ip_16_occ,
+         -is_cloud_asn
+  )
+
+</pre>
+</code>
+
+<ul>
+<li>Custom IP eclusion</li>
+</ul>
+
+<code>
+<pre>
+
+df <- df %>% filter(!grepl(ip_exclude, ip))
+
+</pre>
+</code>
+
+<ul>
+<li>Honey Pots</li>
+</ul>
+
+<code>
+<pre>
+
+good_ip <- df %>%
+           filter(!(target %in% honey_pots)) %>%
+           pull(ip)
+
+df <- df %>% filter(ip %in% good_ip)
+
+</pre>
+</code>
+
+<h2>Notes</h2>
+
+
+<p> The accepted log format for this application is (NGINX): </p>
+
+<code>
+<pre>
+
+log_format statix_tsv '$remote_addr\t'
+                      '$msec\t'
+                      '$uri\t'
+                      '$status\t'
+                      '$http_user_agent';
+
+</pre>
+</code>
+
+
+
+

@@ -78,14 +78,20 @@ function(input, output, session) {
   observe({
     session$sendCustomMessage("getTimezone", list())
   })
-  
+
+  t <- Sys.time()
+
+  raw_data <- load_raw_data(file_path)
+ 
+  log_step("Read First", t, raw_data)
+
   filtered_data <- reactive({
 
     mmdb_bump()
 
     req(input$time_unit, input$last_n)
 
-    df <- raw_data_static
+    df <- raw_data
     req(nrow(df) > 0)
 
     t <- Sys.time()
@@ -259,7 +265,6 @@ function(input, output, session) {
     df
   })
 
-  # KPIs
   output$kpi_hits <- renderText({
     df <- filtered_data()
     format(nrow(df), big.mark = " ") # big.mark -> spaces as thousands -> each 3 characters
@@ -393,78 +398,27 @@ function(input, output, session) {
     df <- filtered_data()
     req(nrow(df) > 0)
 
-    patterns <- input$webpages
-
-    if (!is.null(patterns) && nzchar(patterns)) {
-
-      pats <- strsplit(patterns, "--", fixed = TRUE)[[1]]
-
-      # Create empty grouping column
-      df$target_group <- NA_character_
-
-      # FIRST MATCH WINS (no reassignment)
-      for (p in pats) {
-        idx <- is.na(df$target_group) & grepl(p, df$target)
-        df$target_group[idx] <- p
-      }
-
-      # Remove rows that matched none
-      df <- df[!is.na(df$target_group), ]
-
-      req(nrow(df) > 0)
-
-    } else {
-      df$target_group <- df$target
-    }
-
     interval <- interval_map[[input$time_unit]]
 
+    target_group <- df %>%
+                    count(target, name="hits", sort = TRUE) %>%
+                    head(n = 5) %>%
+                    pull(target)
+
     df <- df %>%
+      filter(target %in% target_group) %>%
       mutate(date_bucket = floor_date(date, unit = interval)) %>%
-      count(target_group, date_bucket, name = "hits")
-
+      count(target, date_bucket, name = "hits")
    
-    text_col <- "#000000"
-    grid_col <- "#E5E5E5"
-
     plot_ly(
       data = df,
       x = ~date_bucket,
       y = ~hits,
-      color = ~target_group,
+      color = ~target,
       type = "scatter",
       mode = "lines+markers"
-    ) %>%
-      layout(
-        template = "none",  # 🔥 critical
-
-        title = list(
-          text = "Traffic by URL (regex buckets — first match wins)",
-          font = list(color = text_col)
-        ),
-
-        paper_bgcolor = "rgba(0,0,0,0)",
-        plot_bgcolor  = "rgba(0,0,0,0)",
-
-        font = list(color = text_col),
-
-        legend = list(
-          font = list(color = text_col),
-          bgcolor = "rgba(0,0,0,0)"
-        ),
-
-        xaxis = list(
-          title = list(text = "Date", font = list(color = text_col)),
-          tickfont = list(color = text_col),
-          gridcolor = grid_col
-        ),
-
-        yaxis = list(
-          title = list(text = "Number of requests", font = list(color = text_col)),
-          tickfont = list(color = text_col),
-          gridcolor = grid_col
-        )
-    )  
+    ) 
+  
   })
 
   output$mytable <- renderDT({
@@ -529,19 +483,29 @@ function(input, output, session) {
     req(nrow(df) > 0)
   
     df <- df %>%
-      filter(!is.na(lat), !is.na(lon))
+      filter(!is.na(lat), !is.na(lon), !is.na(country))
   
     req(nrow(df) > 0)
-  
+
+    cat("\n MISSING COUNTRIES \n")
+
+    missing_countries <- df %>%
+      distinct(country) %>%
+      left_join(country_coords, by = "country") %>%
+      filter(is.na(country_lat) | is.na(country_lon)) %>%
+      pull(country)
+    
+    cat(paste(missing_countries, collapse = "\n"), "\n")
+
     agg <- df %>%
       group_by(country) %>%
       summarise(
         hits = n(),
         unique_ips = n_distinct(ip),
-        lat = mean(lat),
-        lon = mean(lon),
         .groups = "drop"
-      )
+      ) %>%
+      left_join(country_coords, by="country") %>%
+      filter(!is.na(country_lat), !is.na(country_lon))
   
     leaflet(agg) %>%
       addProviderTiles(
@@ -549,19 +513,17 @@ function(input, output, session) {
       ) %>%
       setView(lng = 0, lat = 20, zoom = 2) %>%
       addCircleMarkers(
-        lng = ~lon,
-        lat = ~lat,
+        lng = ~country_lon,
+        lat = ~country_lat,
         radius = ~pmin(25, pmax(5, sqrt(hits) * 3)),
         stroke = FALSE,
         fillOpacity = 0.75,
         popup = ~paste0(
           "<b>Country:</b> ", country, "<br>",
           "<b>Total hits:</b> ", hits, "<br>",
-          "<b>Unique IPs:</b> ", unique_ips
+          "<b>Unique IPs:</b> <span style='color:red;'>", unique_ips, "</span>"
         ),
-        clusterOptions = if (isTRUE(input$map_cluster))
-          markerClusterOptions()
-        else NULL
+        clusterOptions = NULL
       )
   
   })
