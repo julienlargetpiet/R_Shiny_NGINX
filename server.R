@@ -316,19 +316,6 @@ function(input, output, session) {
 
     req(nrow(df) > 0)
 
-    # computes one median over the whole filtered table, assuming df was not already grouped with group_by(...).
-
-    # So after summarise, you get a tibble like:
-    # 
-    # # A tibble: 1 × 1
-    #     med
-    #   <dbl>
-    # 1  42.5
-    # 
-    # Then:
-    # 
-    # 42.5
-
     median_time <- df %>%
       filter(
         !is.na(time_on_page),
