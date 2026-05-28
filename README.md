@@ -39,7 +39,7 @@ ggplot2
 dplyr
 lubridate
 bslib
-readr
+data.table
 bsicons
 shinymanager
 shinycssloaders
