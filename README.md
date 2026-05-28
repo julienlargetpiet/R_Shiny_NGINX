@@ -231,11 +231,13 @@ df <- df %>% filter(!grepl(ip_exclude, ip))
 <pre>
 <code>
 
-good_ip <- df %>%
-           filter(!(target %in% honey_pots)) %>%
-           pull(ip)
+bad_ip <- df %>%
+  filter(target %in% honey_pots) %>%
+  distinct(ip) %>%
+  pull(ip)
 
-df <- df %>% filter(ip %in% good_ip)
+df <- df %>%
+  filter(!(ip %in% bad_ip))
 
 </code>
 </pre>
