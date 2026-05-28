@@ -104,8 +104,8 @@ res_auth <- secure_server(check_credentials = check_credentials(credentials))
 
 </ul>
 
-<code>
 <pre>
+<code>
 
 ua_is_bot <- setNames(
   grepl(
@@ -120,16 +120,15 @@ ua_is_bot <- setNames(
 df <- df %>%
   filter(!ua_is_bot[ua])
 
-</pre>
 </code>
-
+</pre>
 
 <ul>
 <li>Asset heuristic</li>
 </ul>
 
-<code>
 <pre>
+<code>
 
 css_clients <- df %>% 
         filter(endsWith(tolower(target), ".css")) %>%
@@ -138,15 +137,15 @@ css_clients <- df %>%
 
 df <- df %>% filter(ip %in% css_clients)
 
-</pre>
 </code>
+</pre>
 
 <ul>
 <li>Rate heuristic</li>
 </ul>
 
-<code>
 <pre>
+<code>
 
 df <- df %>%
   filter(grepl("^/articles/.*\\.html$", target, ignore.case=TRUE))
@@ -158,15 +157,15 @@ df <- df %>%
   ungroup() %>%
   select(-req_per_sec)
 
-</pre>
 </code>
+</pre>
 
 <ul>
 <li>Reading time heuristic</li>
 </ul>
 
-<code>
 <pre>
+<code>
 
 df <- df %>%
   arrange(ip, date) %>%
@@ -180,15 +179,15 @@ df <- df %>%
   filter(time_on_page == -1 | time_on_page > 5 & time_on_page < 3600) %>%
   select(-next_date)
 
-</pre>
 </code>
+</pre>
 
 <ul>
 <li>Cloud ASN repeated range burst</li>
 </ul>
 
-<code>
 <pre>
+<code>
 
 df <- df %>%
   arrange(date) %>%
@@ -210,27 +209,27 @@ df <- df %>%
          -is_cloud_asn
   )
 
-</pre>
 </code>
+</pre>
 
 <ul>
 <li>Custom IP eclusion</li>
 </ul>
 
-<code>
 <pre>
+<code>
 
 df <- df %>% filter(!grepl(ip_exclude, ip))
 
-</pre>
 </code>
+</pre>
 
 <ul>
 <li>Honey Pots</li>
 </ul>
 
-<code>
 <pre>
+<code>
 
 good_ip <- df %>%
            filter(!(target %in% honey_pots)) %>%
@@ -238,16 +237,17 @@ good_ip <- df %>%
 
 df <- df %>% filter(ip %in% good_ip)
 
-</pre>
 </code>
+</pre>
 
 <h2>Notes</h2>
 
 
 <p> The accepted log format for this application is (NGINX): </p>
 
-<code>
+
 <pre>
+</code>
 
 log_format statix_tsv '$remote_addr\t'
                       '$msec\t'
@@ -255,8 +255,8 @@ log_format statix_tsv '$remote_addr\t'
                       '$status\t'
                       '$http_user_agent';
 
-</pre>
 </code>
+</pre>
 
 
 
