@@ -206,10 +206,26 @@ function(input, output, session) {
       ungroup() %>%
       filter(ip_16_occ == 1 | !is_cloud_asn) %>%
       select(-asn_org_clean, 
-             -ip_16, -asn_changed, 
+             -ip_16, 
+             -asn_changed, 
              -asn_bucket, 
-             -ip_16_occ,
-             -is_cloud_asn
+             -ip_16_occ
+      )
+
+    df <- df %>%
+      arrange(date) %>%
+      mutate(
+        ip_24 = sub("\\.[0-9]+$", "", ip),
+        half_hour_bucket = floor_date(date, unit="30 minutes") # ful date + hour
+      ) %>%
+      group_by(half_hour_bucket, ip_24) %>%
+      mutate(ip_24_occ = n()) %>%
+      ungroup() %>%
+      filter(ip_24_occ == 1 | !is_cloud_asn) %>%
+      select(-ip_24, 
+             -ip_24_occ,
+             -is_cloud_asn,
+             -half_hour_bucket
       )
 
     log_step("ASN filtering", t, df)
