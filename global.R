@@ -32,7 +32,7 @@ log_step <- function(name, start, df = NULL) {
 
 credentials <- data.frame(
   user = "admin",
-  password = "PASSWORD",
+  password = "Rachidedu78300!!!",
   admin = TRUE,
   stringsAsFactors = FALSE
 )
