@@ -89,9 +89,10 @@ ui <- fluidPage(
     ),
 
     nav_panel(
-      title = "Referer Page",
-      card(
-        withSpinner(DTOutput("refdata"), type = 5, size = 1.0)
+      title = "Referer data",
+      value_box(
+        title = NULL,
+        value = withSpinner(plotlyOutput("refdata"), type = 5, size = 1.3)
       )
     ),
 
