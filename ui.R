@@ -89,6 +89,13 @@ ui <- fluidPage(
     ),
 
     nav_panel(
+      title = "Referer Page",
+      card(
+        withSpinner(DTOutput("refdata"), type = 5, size = 1.0)
+      )
+    ),
+
+    nav_panel(
       title = "Geo Map",
       card(
         withSpinner(

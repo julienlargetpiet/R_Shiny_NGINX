@@ -255,7 +255,8 @@ log_format statix_tsv '$remote_addr\t'
                       '$msec\t'
                       '$uri\t'
                       '$status\t'
-                      '$http_user_agent';
+                      '$http_user_agent\t'
+                      '$http_referer';
 
 </code>
 </pre>

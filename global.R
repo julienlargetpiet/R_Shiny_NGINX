@@ -353,10 +353,10 @@ load_raw_data <- function(file_path) {
     df <- data.table::fread(input = file_path,
                       sep="\t",
                       quote = "\"",
-                      col.names = c("ip", "ts", "target", "status", "ua"),
+                      col.names = c("ip", "ts", "target", "status", "ua", "referer"),
                       header = FALSE,
                       colClasses = list(
-                                        character = c(1, 3, 5),
+                                        character = c(1, 3, 5, 6),
                                         double = 2,
                                         integer = 4
                                        ),
@@ -364,7 +364,7 @@ load_raw_data <- function(file_path) {
           ) 
 
     df[, date := as.POSIXct(ts, origin = "1970-01-01", tz = "UTC")]
-    df <- df[, .(ip, date, target, status, ua)]
+    df <- df[, .(ip, date, target, status, ua, referer)]
     df <- df[!is.na(date) & 
              !is.na(target) & 
              !is.na(status) & 

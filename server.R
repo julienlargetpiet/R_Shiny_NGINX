@@ -462,6 +462,29 @@ function(input, output, session) {
   
   })
 
+  output$refdata <- renderPlotly({
+  
+    df <- filtered_data()
+    req(nrow(df) > 0)
+  
+    df <- df[, .(hits = .N), by = referer]
+  
+    df[is.na(referer) | referer == "", referer := "(no referer)"]
+  
+    df <- df[order(-hits)][1:min(.N, 30)]
+  
+    df[, referer := factor(referer, levels = rev(referer))]
+  
+    plot_ly(
+      data = df,
+      y = ~referer,
+      x = ~hits,
+      type = "bar",
+      orientation = "h"
+    )
+  
+  })
+
   output$mytable <- renderDT({
     df <- geo_enriched_data()
     req(input$client_tz)
@@ -481,8 +504,12 @@ function(input, output, session) {
           "</a>"
         )
     ]
+
+    df[is.na(referer) | referer == "", referer := "NA"]
+
     datatable(
         df[, .(country,
+               referer,
                asn_org,
                ip,
                date,
