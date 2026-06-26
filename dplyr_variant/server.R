@@ -426,6 +426,66 @@ function(input, output, session) {
   
   })
 
+  output$refdata <- renderPlotly({
+  
+    df <- filtered_data()
+    req(nrow(df) > 0)
+  
+    df <- df %>%
+        group_by(referer) %>%
+        summarize(hits = n())
+
+    #df <- df %>%
+    #    mutate(referer = dplyr::if_else(
+    #        is.na(referer) | referer == "",
+    #        "(no referer)",
+    #        referer
+    #    ))
+
+    #df <- df %>%
+    #    mutate(referer = dplyr::ifelse(
+    #        is.na(referer) | referer == "",
+    #        "(no referer)",
+    #        referer
+    #    ))
+
+    #df <- df %>%
+    #    mutate(
+    #      referer = dplyr::case_when(
+    #        referer,
+    #        is.na(referer) | referer == "" ~ "(no referer)",
+    #        TRUE ~ referer
+    #       )
+    #    )
+
+    df <- df %>%
+        mutate(referer = replace(
+            referer,
+            is.na(referer) | referer == "",
+            "(no referer)"
+          )
+        )
+
+    #df <- df %>%
+    #    arrange(desc(hits)) %>%
+    #    slice_head(n = 1:min(n(), 30))
+
+    df <- df %>%
+        slice_max(desc, n = 30, with_ties = FALSE)
+
+    df <- df %>%
+        mutate(referer = factor(referer, levels = rev(referer)))
+
+    plot_ly(
+      data = df,
+      y = ~referer,
+      x = ~hits,
+      type = "bar",
+      orientation = "h"
+    )
+  
+  })
+
   output$mytable <- renderDT({
     df <- geo_enriched_data()
     req(input$client_tz)
@@ -446,7 +506,13 @@ function(input, output, session) {
           target,
           "</a>"
         )) %>%
-        select(country, asn_org, ip, date, target, time_on_page),
+        select(country, 
+               asn_org, 
+               referer, 
+               ip, 
+               date, 
+               target, 
+               time_on_page),
       options = list(
         pageLength = 100,
         scrollX = TRUE,
