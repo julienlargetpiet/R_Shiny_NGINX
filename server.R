@@ -283,7 +283,16 @@ function(input, output, session) {
       unique(ip)
     ]
     
-    df <- df[!ip %chin% bad_ip]
+    df <- df[!(ip %chin% bad_ip)]
+
+    grp_expr <- "https?://(www\\.)?julienlargetpiet\\.tech/articles/[0-9]+\\.html" 
+
+    bad_ip <- df[
+        grepl(grp_expr, target) | grepl(grp_expr, referer),
+        unique(ip)
+    ]
+
+    df <- df[!(ip %chin% bad_ip)]
 
     log_step("HONEY POTS", t, df)
 
